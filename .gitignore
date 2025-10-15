@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+
+# Uploads and data
+uploads/
+data/
+
+# FFmpeg binary
+ffmpeg-master-latest-win64-gpl/
+ffmpeg.zip
+ffmpeg-temp/
+
+# Test files
+test_meeting.mp3
+debug_test.py
+create_test_audio.py
+test_application.py
+.idea/
+*.swp
+*.swo
+*~
+
+# Uploaded files and data
+uploads/
+data/
+*.wav
+*.mp3
+*.m4a
+*.flac
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

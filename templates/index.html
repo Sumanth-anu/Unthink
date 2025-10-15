@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Summarizer - AI-Powered Meeting Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .upload-section {
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.drag-over {
+            background: #e0e7ff;
+            border-color: #4f46e5;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .transcript-text {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary-text {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.8;
+        }
+
+        .list-items {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .list-items ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .list-items li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9ff;
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .list-items li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+
+        .selected-file {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e0e7ff;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: -1;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .step.active .step-circle {
+            background: #667eea;
+            color: white;
+        }
+
+        .step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎙️ Meeting Summarizer</h1>
+            <p>Transform your meeting recordings into actionable insights</p>
+        </header>
+
+        <!-- Upload Section -->
+        <div class="card upload-section">
+            <h2>Upload Meeting Audio</h2>
+            <p style="color: #666; margin: 15px 0;">Supported formats: WAV, MP3, M4A, FLAC, OGG, WEBM</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & drop your audio file here</h3>
+                <p style="margin: 10px 0;">or</p>
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Browse Files
+                </button>
+                <input type="file" id="fileInput" class="file-input" accept=".wav,.mp3,.m4a,.flac,.ogg,.webm">
+            </div>
+
+            <div class="selected-file" id="selectedFile"></div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn" id="processBtn" onclick="processAudio()" disabled>
+                    🚀 Process Meeting
+                </button>
+            </div>
+
+            <div class="status-message" id="statusMessage"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Processing your meeting...</p>
+            </div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="card" id="progressCard" style="display: none;">
+            <div class="progress-steps">
+                <div class="step" id="step1">
+                    <div class="step-circle">1</div>
+                    <p>Upload</p>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-circle">2</div>
+                    <p>Transcribe</p>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-circle">3</div>
+                    <p>Summarize</p>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-circle">4</div>
+                    <p>Complete</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <!-- Meeting Info -->
+            <div class="card">
+                <h2>📊 Meeting Details</h2>
+                <div id="meetingInfo"></div>
+            </div>
+
+            <!-- Transcript -->
+            <div class="card">
+                <div class="result-card">
+                    <h3>📝 Full Transcript</h3>
+                    <div class="transcript-text" id="transcriptText"></div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card">
+                <div class="result-card">
+                    <h3>📋 Meeting Summary</h3>
+                    <div class="summary-text" id="summaryText"></div>
+                </div>
+            </div>
+
+            <!-- Key Decisions -->
+            <div class="card">
+                <div class="result-card">
+                    <h3>🎯 Key Decisions</h3>
+                    <div class="list-items" id="keyDecisions"></div>
+                </div>
+            </div>
+
+            <!-- Action Items -->
+            <div class="card">
+                <div class="result-card">
+                    <h3>✅ Action Items</h3>
+                    <div class="list-items" id="actionItems"></div>
+                </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="card" style="text-align: center;">
+                <button class="btn btn-secondary" onclick="resetApp()">
+                    ↻ Process Another Meeting
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let currentMeetingId = null;
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const selectedFileDiv = document.getElementById('selectedFile');
+        const processBtn = document.getElementById('processBtn');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            selectedFile = file;
+            selectedFileDiv.style.display = 'block';
+            selectedFileDiv.innerHTML = `
+                <strong>Selected file:</strong> ${file.name} 
+                (${(file.size / 1024 / 1024).toFixed(2)} MB)
+            `;
+            processBtn.disabled = false;
+            showStatus('File selected. Click "Process Meeting" to begin.', 'info');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function updateStep(stepNumber, status) {
+            const step = document.getElementById(`step${stepNumber}`);
+            step.className = `step ${status}`;
+        }
+
+        async function processAudio() {
+            if (!selectedFile) {
+                showStatus('Please select a file first.', 'error');
+                return;
+            }
+
+            processBtn.disabled = true;
+            hideStatus();
+            showLoading(true);
+            document.getElementById('progressCard').style.display = 'block';
+
+            try {
+                // Step 1: Upload
+                updateStep(1, 'active');
+                const formData = new FormData();
+                formData.append('audio', selectedFile);
+
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const uploadData = await uploadResponse.json();
+                currentMeetingId = uploadData.meeting_id;
+                updateStep(1, 'completed');
+                updateStep(2, 'active');
+
+                // Step 2 & 3: Process (transcribe + summarize)
+                const processResponse = await fetch(`/api/process/${currentMeetingId}`, {
+                    method: 'POST'
+                });
+
+                if (!processResponse.ok) {
+                    throw new Error('Processing failed');
+                }
+
+                const resultData = await processResponse.json();
+                updateStep(2, 'completed');
+                updateStep(3, 'completed');
+                updateStep(4, 'completed');
+
+                // Display results
+                displayResults(resultData);
+                
+                showLoading(false);
+                showStatus('Meeting processed successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showLoading(false);
+                showStatus(`Error: ${error.message}`, 'error');
+                processBtn.disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Meeting info
+            document.getElementById('meetingInfo').innerHTML = `
+                <span class="info-badge">Meeting ID: ${data.meeting_id}</span>
+                <span class="info-badge">Language: ${data.language || 'Auto-detected'}</span>
+            `;
+
+            // Transcript
+            document.getElementById('transcriptText').textContent = data.transcript;
+
+            // Summary
+            document.getElementById('summaryText').textContent = data.summary || 'No summary available.';
+
+            // Key Decisions
+            const decisionsHtml = data.key_decisions && data.key_decisions.length > 0
+                ? '<ul>' + data.key_decisions.map(d => `<li>${d}</li>`).join('') + '</ul>'
+                : '<p>No key decisions identified.</p>';
+            document.getElementById('keyDecisions').innerHTML = decisionsHtml;
+
+            // Action Items
+            const actionsHtml = data.action_items && data.action_items.length > 0
+                ? '<ul>' + data.action_items.map(a => `<li>${a}</li>`).join('') + '</ul>'
+                : '<p>No action items identified.</p>';
+            document.getElementById('actionItems').innerHTML = actionsHtml;
+
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetApp() {
+            selectedFile = null;
+            currentMeetingId = null;
+            fileInput.value = '';
+            selectedFileDiv.style.display = 'none';
+            processBtn.disabled = true;
+            hideStatus();
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('progressCard').style.display = 'none';
+            
+            // Reset steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}`).className = 'step';
+            }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
